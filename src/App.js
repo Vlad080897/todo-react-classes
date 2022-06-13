@@ -24,14 +24,15 @@ class App extends React.Component {
     this.toggleEditMode = this.toggleEditMode.bind(this)
     this.updateValue = this.updateValue.bind(this)
     this.updateAllTasks = this.updateAllTasks.bind(this)
+    this.getTasksFromLocal = this.getTasksFromLocal.bind(this)
   }
 
   componentDidMount() {
     this.props.history.push('/all')
     this.currentPage();
-    this.setState({ itemsLeft: (JSON.parse(localStorage.getItem('tasks')) || []).length })
+    this.setState({ itemsLeft: this.getTasksFromLocal().length })
     Emitter.on('ADD_NEW_TASK_INPUT', (newTask) => {
-      const fromLocal = (JSON.parse(localStorage.getItem('tasks')) || []);
+      const fromLocal = this.getTasksFromLocal();
       this.setState({ tasks: [...fromLocal, newTask] }, () => {
         this.updateAllTasks(this.state.tasks)
       });
@@ -53,22 +54,26 @@ class App extends React.Component {
     Emitter.on('CLICK_FOOTER_BTN', this.currentPage)
   };
 
+  getTasksFromLocal() {
+    return (JSON.parse(localStorage.getItem('tasks')) || []);
+  }
+
   currentPage() {
     const { pathname } = this.props.history.location
     if (pathname.includes('all')) {
-      const newTasks = (JSON.parse(localStorage.getItem('tasks')) || [])
+      const newTasks = this.getTasksFromLocal()
       this.setState({
         tasks: [...newTasks],
       })
     }
     if (pathname.includes('active')) {
-      const newTasks = (JSON.parse(localStorage.getItem('tasks')) || []).filter((t) => t.completed === false);
+      const newTasks = this.getTasksFromLocal().filter((t) => t.completed === false);
       this.setState({
         tasks: [...newTasks],
       })
     }
     if (pathname.includes('completed')) {
-      const newTasks = (JSON.parse(localStorage.getItem('tasks')) || []).filter((t) => t.completed === true);
+      const newTasks = this.getTasksFromLocal().filter((t) => t.completed === true);
       this.setState({
         tasks: [...newTasks],
       })
@@ -77,7 +82,7 @@ class App extends React.Component {
 
   updateLocal(newTasks) {
     localStorage.setItem('tasks', JSON.stringify(newTasks));
-    this.setState({ itemsLeft: (JSON.parse(localStorage.getItem('tasks')) || []).filter(t => t.completed === false).length })
+    this.setState({ itemsLeft: this.getTasksFromLocal().filter(t => t.completed === false).length })
   }
 
   updateAllTasks(newTasks) {
@@ -86,28 +91,28 @@ class App extends React.Component {
   }
 
   createNewTasks(newTask) {
-    const fromLocal = (JSON.parse(localStorage.getItem('tasks')) || []);
+    const fromLocal = this.getTasksFromLocal();
     this.setState({ tasks: [...fromLocal, newTask] }, () => {
       this.updateAllTasks(this.state.tasks)
     });
   }
 
   deleteTask(id) {
-    const newTasks = (JSON.parse(localStorage.getItem('tasks')) || []).filter(t => t.id !== id);
+    const newTasks = this.getTasksFromLocal().filter(t => t.id !== id);
     this.setState({ tasks: [...newTasks] }, () => {
       this.updateAllTasks(this.state.tasks)
     });
   }
 
   clearCompleted() {
-    const newTasks = (JSON.parse(localStorage.getItem('tasks')) || []).filter((t) => t.completed === false);;
+    const newTasks = this.getTasksFromLocal().filter((t) => t.completed === false);;
     this.setState({ tasks: [...newTasks] }, () => {
       this.updateAllTasks(this.state.tasks)
     });
   }
 
   completeTask(id) {
-    const fromLocal = (JSON.parse(localStorage.getItem('tasks')) || []);
+    const fromLocal = this.getTasksFromLocal();
     const newTasks = fromLocal.map((t, i) => {
       if (t.id === id) {
         return {
@@ -123,7 +128,7 @@ class App extends React.Component {
   }
 
   checkAll() {
-    const currentTasks = (JSON.parse(localStorage.getItem('tasks')) || []);
+    const currentTasks = this.getTasksFromLocal();
     const notCompleted = currentTasks.find(t => t.completed === false);
     const newTasks = currentTasks.map(t => {
       if (notCompleted) {
@@ -159,7 +164,7 @@ class App extends React.Component {
 
   updateValue(id, description) {
     this.toggleEditMode(id)
-    const fromLocal = (JSON.parse(localStorage.getItem('tasks')) || []);
+    const fromLocal = this.getTasksFromLocal();
     const newTask = fromLocal.map(t => {
       if (t.id === id) {
         return {

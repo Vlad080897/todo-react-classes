@@ -4,18 +4,19 @@ import Emitter from "./Emitter";
 
 class Footer extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
       haveCompleted: null
-    }
+    };
+    this.getTasksFromLocal = this.getTasksFromLocal.bind(this);
   }
   componentDidMount() {
-    const haveCompleted = (JSON.parse(localStorage.getItem('tasks')) || []).filter(t => t.completed === true).length
+    const haveCompleted = this.getTasksFromLocal().filter(t => t.completed === true).length
     this.setState({ haveCompleted: haveCompleted })
   }
 
   componentDidUpdate() {
-    const haveCompleted = (JSON.parse(localStorage.getItem('tasks')) || []).filter(t => t.completed === true).length
+    const haveCompleted = this.getTasksFromLocal().filter(t => t.completed === true).length
     if (haveCompleted !== this.state.haveCompleted) {
       this.setState({ haveCompleted: haveCompleted })
     }
@@ -27,10 +28,14 @@ class Footer extends React.Component {
 
   handleClick() {
     Emitter.emit('CLICK_FOOTER_BTN')
-  }
+  };
+
+  getTasksFromLocal() {
+    return (JSON.parse(localStorage.getItem('tasks')) || []);
+  };
 
   render() {
-    const fromLocal = (JSON.parse(localStorage.getItem('tasks')) || []).length;
+    const fromLocal = this.getTasksFromLocal().length;
     const { pathname } = this.props.history.location;
 
     if (fromLocal) {

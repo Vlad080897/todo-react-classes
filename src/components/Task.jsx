@@ -9,6 +9,7 @@ class Task extends React.Component {
       value: this.props.task.description
     };
     this.handleChange = this.handleChange.bind(this);
+    
     this.inputRef = React.createRef();
   }
 
@@ -31,6 +32,8 @@ class Task extends React.Component {
   handleUpdateValue(id, value) {
     Emitter.emit('UPDATE_VALUE', { id, value })
   }
+
+  
 
   render() {
     const { description, id, completed, isEdit } = this.props.task
