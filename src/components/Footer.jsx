@@ -1,5 +1,6 @@
 import React from "react";
 import { withRouter } from "react-router-dom";
+import Emitter from "./Emitter";
 
 class Footer extends React.Component {
   constructor(props) {
@@ -9,19 +10,27 @@ class Footer extends React.Component {
     }
   }
   componentDidMount() {
-    const haveCompleted = JSON.parse(localStorage.getItem('tasks')).filter(t => t.completed === true).length
+    const haveCompleted = (JSON.parse(localStorage.getItem('tasks')) || []).filter(t => t.completed === true).length
     this.setState({ haveCompleted: haveCompleted })
   }
 
   componentDidUpdate() {
-    const haveCompleted = JSON.parse(localStorage.getItem('tasks')).filter(t => t.completed === true).length
+    const haveCompleted = (JSON.parse(localStorage.getItem('tasks')) || []).filter(t => t.completed === true).length
     if (haveCompleted !== this.state.haveCompleted) {
       this.setState({ haveCompleted: haveCompleted })
     }
   }
 
+  handleClearCompleted() {
+    Emitter.emit('CLEAR_COMPLETED');
+  };
+
+  handleClick() {
+    Emitter.emit('CLICK_FOOTER_BTN')
+  }
+
   render() {
-    const fromLocal = JSON.parse(localStorage.getItem('tasks') || []).length;
+    const fromLocal = (JSON.parse(localStorage.getItem('tasks')) || []).length;
     const { pathname } = this.props.history.location;
 
     if (fromLocal) {
@@ -36,7 +45,7 @@ class Footer extends React.Component {
                 className={`${pathname.includes('all') ? 'activeButton' : ''}`}
                 onClick={() => {
                   this.props.history.push("/all");
-                  this.props.currentPage();
+                  this.handleClick();
                 }}
               >
                 All
@@ -48,7 +57,7 @@ class Footer extends React.Component {
                 className={`${pathname.includes('active') ? 'activeButton' : ''}`}
                 onClick={() => {
                   this.props.history.push("/active");
-                  this.props.currentPage();
+                  this.handleClick();
                 }}
               >
                 Active
@@ -60,7 +69,7 @@ class Footer extends React.Component {
                 className={`${pathname.includes('completed') ? 'activeButton' : ''}`}
                 onClick={() => {
                   this.props.history.push("/completed");
-                  this.props.currentPage();
+                  this.handleClick();
                 }}
               >
                 Completed
@@ -70,7 +79,7 @@ class Footer extends React.Component {
           <button
             type="button"
             className={`${this.state.haveCompleted ? 'clear-completed visible' : 'hidden'}`}
-            onClick={this.props.clearCompleted}
+            onClick={this.handleClearCompleted}
           >
             Clear completed
           </button>

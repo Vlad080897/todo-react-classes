@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import '../index.css'
+import Emitter from './Emitter'
 
 export default class Header extends Component {
   constructor(props) {
@@ -17,12 +18,12 @@ export default class Header extends Component {
 
   handleSubmit(e) {
     e.preventDefault();
-    this.props.createNewTasks({
+    Emitter.emit('ADD_NEW_TASK_INPUT', {
       id: Date.now(),
       description: this.state.value,
       completed: false,
       isEdit: false
-    })
+    });
     this.setState(() => ({ value: '' }))
   }
   render() {
@@ -37,7 +38,7 @@ export default class Header extends Component {
             id="main_input"
             placeholder="What needs to be done?"
             autoFocus
-            value={this.state.value} 
+            value={this.state.value}
             onChange={this.handleChange} />
         </form>
       </header>

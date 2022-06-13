@@ -1,4 +1,5 @@
 import React from "react";
+import Emitter from "./Emitter";
 import Task from "./Task";
 
 class Todo extends React.Component {
@@ -32,6 +33,10 @@ class Todo extends React.Component {
     this.isAllChecked();
   }
 
+  handleCheckAll() {
+    Emitter.emit('CHECK_ALL')
+  }
+
   render() {
     return (
       <section className="main">
@@ -39,7 +44,7 @@ class Todo extends React.Component {
           className="toggle-all"
           type="checkbox"
           id="toggle-all"
-          onChange={this.props.checkAll}
+          onChange={this.handleCheckAll}
           ref={this.checkAllBtn}
         />
         <label htmlFor="toggle-all"></label>
