@@ -11,82 +11,86 @@ class App extends React.Component {
     super(props)
     this.state = {
       tasks: [],
-      itemsLeft: 0
+      itemsLeft: 0,
+      path: 'All',
     }
     this.createNewTasks = this.createNewTasks.bind(this)
+    this.updateLocal = this.updateLocal.bind(this)
+    this.updateState = this.updateState.bind(this)
     this.deleteTask = this.deleteTask.bind(this)
     this.completeTask = this.completeTask.bind(this)
     this.checkAll = this.checkAll.bind(this)
-    this.updateLocal = this.updateLocal.bind(this)
     this.clearCompleted = this.clearCompleted.bind(this)
-    this.currentPage = this.currentPage.bind(this)
     this.toggleEditMode = this.toggleEditMode.bind(this)
     this.updateValue = this.updateValue.bind(this)
-    this.updateAllTasks = this.updateAllTasks.bind(this)
-  }
-
-  componentDidMount() {
-    this.props.history.push('/all')
-    this.currentPage();
-    this.setState({ itemsLeft: JSON.parse(localStorage.getItem('tasks') || []).length })
-  }
-
-  currentPage() {
-    const { pathname } = this.props.history.location
-    if (pathname.includes('all')) {
-      const newTasks = JSON.parse(localStorage.getItem('tasks') || [])
-      this.setState({
-        tasks: [...newTasks],
-      })
-    }
-    if (pathname.includes('active')) {
-      const newTasks = JSON.parse(localStorage.getItem('tasks') || []).filter((t) => t.completed === false);
-      this.setState({
-        tasks: [...newTasks],
-      })
-    }
-    if (pathname.includes('completed')) {
-      const newTasks = JSON.parse(localStorage.getItem('tasks') || []).filter((t) => t.completed === true);
-      this.setState({
-        tasks: [...newTasks],
-      })
-    }
+    this.updatePath = this.updatePath.bind(this)
+    this.localTasks = JSON.parse(localStorage.getItem("tasks")) || [];
   }
 
   updateLocal(newTasks) {
     localStorage.setItem('tasks', JSON.stringify(newTasks));
-    this.setState({ itemsLeft: (JSON.parse(localStorage.getItem('tasks') || [])).filter(t => t.completed === false).length })
+    this.localTasks = newTasks;
   }
 
-  updateAllTasks(newTasks) {
-    this.updateLocal(newTasks);
-    this.currentPage();
+  updateState(newState) {
+    const itemsLeft = this.localTasks.filter(
+      (t) => t.completed === false
+    ).length;
+    const activeTasks = this.localTasks.filter(t => !t.completed)
+    const completedTasks = this.localTasks.filter(t => t.completed)
+
+    if (newState.path === 'Active') {
+      this.setState({
+        ...newState,
+        tasks: activeTasks,
+        itemsLeft,
+      })
+    } else if (newState.path === 'Completed') {
+      this.setState({
+        ...newState,
+        tasks: completedTasks,
+        itemsLeft,
+      })
+    } else {
+        this.setState({
+          ...newState,
+          tasks: this.localTasks,
+          itemsLeft,
+      })
+    }
   }
 
   createNewTasks(newTask) {
-    const fromLocal = JSON.parse(localStorage.getItem('tasks') || []);
-    this.setState({ tasks: [...fromLocal, newTask] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newState = {
+      ...this.state,
+      tasks: [...this.localTasks, newTask],
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
   }
 
   deleteTask(id) {
-    const newTasks = JSON.parse(localStorage.getItem('tasks') || []).filter(t => t.id !== id);
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newTasks = this.localTasks.filter((t) => t.id !== id);
+    const newState = {
+      ...this.state,
+      tasks: newTasks,
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
   }
 
   clearCompleted() {
-    const newTasks = JSON.parse(localStorage.getItem('tasks')).filter((t) => t.completed === false);;
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newTasks = this.localTasks.filter((t) => t.completed === false);
+    const newState = {
+      ...this.state,
+      tasks: newTasks,
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
   }
 
   completeTask(id) {
-    const fromLocal = JSON.parse(localStorage.getItem('tasks'));
-    const newTasks = fromLocal.map((t, i) => {
+    const newTasks = this.localTasks.map((t) => {
       if (t.id === id) {
         return {
           ...t,
@@ -95,15 +99,17 @@ class App extends React.Component {
       };
       return t;
     });
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newState = {
+      ...this.state,
+      tasks: newTasks,
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
   }
 
   checkAll() {
-    const currentTasks = JSON.parse(localStorage.getItem('tasks'));
-    const notCompleted = currentTasks.find(t => t.completed === false);
-    const newTasks = currentTasks.map(t => {
+    const notCompleted = this.localTasks.find(t => t.completed === false);
+    const newTasks = this.localTasks.map(t => {
       if (notCompleted) {
         return {
           ...t,
@@ -115,9 +121,12 @@ class App extends React.Component {
         completed: false,
       };
     });
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    })
+    const newState = {
+      ...this.state,
+      tasks: newTasks,
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
   }
 
   toggleEditMode(id, input) {
@@ -130,15 +139,22 @@ class App extends React.Component {
       }
       return t
     })
-    this.setState({ tasks: [...newTasks] }, () => {
-      input && input.current.focus()
-    });
+
+    const newState = {
+      ...this.state,
+      tasks: newTasks,
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
+
+    if (input) {
+      input.current.focus()
+    }
   }
 
   updateValue(id, description) {
     this.toggleEditMode(id)
-    const fromLocal = JSON.parse(localStorage.getItem('tasks') || []);
-    const newTask = fromLocal.map(t => {
+    const newTasks = this.localTasks.map(t => {
       if (t.id === id) {
         return {
           ...t,
@@ -147,7 +163,29 @@ class App extends React.Component {
       }
       return t
     })
-    this.updateAllTasks(newTask)
+
+    const newState = {
+      ...this.state,
+      tasks: newTasks,
+    }
+    this.updateLocal(newState.tasks)
+    this.updateState(newState)
+  }
+
+  updatePath(path) {
+    const newState = {
+      ...this.state,
+      path,
+    }
+    this.updateState(newState)
+  }
+
+  componentDidMount() {
+    const newState = {
+      ...this.state,
+      tasks: [...this.localTasks],
+    }
+    this.updateState(newState)
   }
 
   render() {
@@ -165,10 +203,10 @@ class App extends React.Component {
           updateValue={this.updateValue}
         />
         <Footer
-          tasks={this.state.tasks}
-          itemsLeft={this.state.itemsLeft}
+          mainState={this.state}
+          localTasks={this.localTasks}
           clearCompleted={this.clearCompleted}
-          currentPage={this.currentPage}
+          updatePath={this.updatePath}
         />
       </section>
     )

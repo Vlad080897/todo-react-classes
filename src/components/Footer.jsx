@@ -7,37 +7,36 @@ class Footer extends React.Component {
     this.state = {
       haveCompleted: null
     }
+    this.setPath = this.setPath.bind(this)
   }
   componentDidMount() {
-    const haveCompleted = JSON.parse(localStorage.getItem('tasks')).filter(t => t.completed === true).length
+    const haveCompleted = this.props.localTasks.filter(t => t.completed === true).length
     this.setState({ haveCompleted: haveCompleted })
   }
 
   componentDidUpdate() {
-    const haveCompleted = JSON.parse(localStorage.getItem('tasks')).filter(t => t.completed === true).length
+    const haveCompleted = this.props.localTasks.filter(t => t.completed === true).length
     if (haveCompleted !== this.state.haveCompleted) {
       this.setState({ haveCompleted: haveCompleted })
     }
   }
 
-  render() {
-    const fromLocal = JSON.parse(localStorage.getItem('tasks') || []).length;
-    const { pathname } = this.props.history.location;
+  setPath(e) {
+    this.props.updatePath(e.target.textContent)
+  }
 
-    if (fromLocal) {
-      return (
-        fromLocal &&
-        <footer className="footer" id="footer_info_wrapper">
-          <span className="todo-count">{`${this.props.itemsLeft} items left`}</span>
+  render() {
+    const { path, itemsLeft } = this.props.mainState;
+    return (
+      <>
+      {this.props.localTasks ? <footer className="footer" id="footer_info_wrapper">
+          <span className="todo-count">{`${itemsLeft} items left`}</span>
           <ul className="filters">
             <li>
               <button
                 type="button"
-                className={`${pathname.includes('all') ? 'activeButton' : ''}`}
-                onClick={() => {
-                  this.props.history.push("/all");
-                  this.props.currentPage();
-                }}
+                className={`${path === 'All' ? 'activeButton' : ''}`}
+                onClick={this.setPath}
               >
                 All
               </button>
@@ -45,11 +44,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${pathname.includes('active') ? 'activeButton' : ''}`}
-                onClick={() => {
-                  this.props.history.push("/active");
-                  this.props.currentPage();
-                }}
+                className={`${path === 'Active' ? 'activeButton' : ''}`}
+                onClick={this.setPath}
               >
                 Active
               </button>
@@ -57,11 +53,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${pathname.includes('completed') ? 'activeButton' : ''}`}
-                onClick={() => {
-                  this.props.history.push("/completed");
-                  this.props.currentPage();
-                }}
+                className={`${path === 'Completed' ? 'activeButton' : ''}`}
+                onClick={this.setPath}
               >
                 Completed
               </button>
@@ -74,9 +67,10 @@ class Footer extends React.Component {
           >
             Clear completed
           </button>
-        </footer>
-      )
-    }
+        </footer> : null }
+    </>
+
+    )
   }
 
 }
