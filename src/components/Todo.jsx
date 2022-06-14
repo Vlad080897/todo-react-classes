@@ -1,4 +1,5 @@
 import React from "react";
+import { Context } from "../App";
 import Emitter from "./Emitter";
 import Task from "./Task";
 
@@ -7,14 +8,16 @@ class Todo extends React.Component {
     super(props)
     this.checkAllBtn = React.createRef();
     this.isAllChecked = this.isAllChecked.bind(this);
+    Todo.contextType = Context
   }
 
   isAllChecked() {
-    const haveNotCompleted = this.props.tasks.find(t => t.completed === false);
+    const { tasks } = this.context
+    const haveNotCompleted = tasks.find(t => t.completed === false);
     if (haveNotCompleted) {
       this.checkAllBtn.current.checked = false;
     }
-    if (!haveNotCompleted && this.props.tasks.length) {
+    if (!haveNotCompleted && tasks.length) {
       const fromLocal = (JSON.parse(localStorage.getItem('tasks') || [])).find(t => t.completed === false);
       if (fromLocal) {
         this.checkAllBtn.current.checked = false;
@@ -34,10 +37,11 @@ class Todo extends React.Component {
   }
 
   handleCheckAll() {
-    Emitter.emit('CHECK_ALL')
+    Emitter.emit('CHECK_ALL');
   }
 
   render() {
+    const { tasks } = this.context
     return (
       <section className="main">
         <input
@@ -49,7 +53,7 @@ class Todo extends React.Component {
         />
         <label htmlFor="toggle-all"></label>
         <ul className="todo-list" id="todos-wrapper">
-          {this.props.tasks && this.props.tasks.map(t => {
+          {tasks && tasks.map(t => {
             return (
               <Task
                 key={t.id}

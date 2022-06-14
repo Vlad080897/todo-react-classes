@@ -6,10 +6,10 @@ class Task extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: this.props.task.description
+      value: this.props.task.description,
+      isBlur: false
     };
     this.handleChange = this.handleChange.bind(this);
-    
     this.inputRef = React.createRef();
   }
 
@@ -26,14 +26,23 @@ class Task extends React.Component {
   };
 
   handleToggle(id, inputRef) {
+    this.setState({ isBlur: true })
     Emitter.emit('TOGGLE_EDIT_MODE', { id, inputRef })
   }
 
   handleUpdateValue(id, value) {
-    Emitter.emit('UPDATE_VALUE', { id, value })
+    return this.state.isBlur ? Emitter.emit('UPDATE_VALUE', { id, value }) : null
   }
 
-  
+  handleSubmit(e, id) {
+    e.preventDefault();
+    const value = this.state.value;
+    if (value.length && value.trim().length) {
+      this.setState({ isBlur: false }, () => {
+        Emitter.emit('UPDATE_VALUE', { id, value });
+      });
+    };
+  };
 
   render() {
     const { description, id, completed, isEdit } = this.props.task
@@ -55,14 +64,16 @@ class Task extends React.Component {
           </label>
           <button type="button" className="destroy" onClick={() => this.handleDelete(id)}></button>
         </div>
-        <input
-          type="text"
-          className="edit"
-          value={this.state.value}
-          onChange={this.handleChange}
-          onBlur={() => this.handleUpdateValue(id, this.state.value)}
-          ref={this.inputRef}
-        />
+        <form action="" onSubmit={(e) => this.handleSubmit(e, id)}>
+          <input
+            type="text"
+            className="edit"
+            value={this.state.value}
+            onChange={this.handleChange}
+            onBlur={() => this.handleUpdateValue(id, this.state.value)}
+            ref={this.inputRef}
+          />
+        </form>
       </li >
     )
   }

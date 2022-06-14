@@ -1,8 +1,8 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import '../index.css'
 import Emitter from './Emitter'
 
-export default class Header extends Component {
+class Header extends Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -45,3 +45,6 @@ export default class Header extends Component {
     )
   }
 }
+
+
+export default Header

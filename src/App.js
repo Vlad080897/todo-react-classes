@@ -1,18 +1,21 @@
 import React from "react";
+import { withRouter } from "react-router-dom";
+import Emitter from "./components/Emitter";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
+import { active, all, completed } from "./routes";
 import Todo from "./components/Todo";
-import { withRouter } from "react-router-dom";
-import './index.css'
-import Emitter from "./components/Emitter";
+import './index.css';
 
+export const Context = React.createContext();
 
 class App extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       tasks: [],
-      itemsLeft: 0
+      itemsLeft: 0,
+      path: all
     }
     this.createNewTasks = this.createNewTasks.bind(this)
     this.deleteTask = this.deleteTask.bind(this)
@@ -20,23 +23,25 @@ class App extends React.Component {
     this.checkAll = this.checkAll.bind(this)
     this.updateLocal = this.updateLocal.bind(this)
     this.clearCompleted = this.clearCompleted.bind(this)
-    this.currentPage = this.currentPage.bind(this)
     this.toggleEditMode = this.toggleEditMode.bind(this)
     this.updateValue = this.updateValue.bind(this)
-    this.updateAllTasks = this.updateAllTasks.bind(this)
-    this.getTasksFromLocal = this.getTasksFromLocal.bind(this)
+    this.updateState = this.updateState.bind(this)
+    this.updatePath = this.updatePath.bind(this)
+    this.init = this.init.bind(this)
+    this.localTasks = (JSON.parse(localStorage.getItem("tasks")) || [])
   }
 
   componentDidMount() {
-    this.props.history.push('/all')
-    this.currentPage();
-    this.setState({ itemsLeft: this.getTasksFromLocal().length })
-    Emitter.on('ADD_NEW_TASK_INPUT', (newTask) => {
-      const fromLocal = this.getTasksFromLocal();
-      this.setState({ tasks: [...fromLocal, newTask] }, () => {
-        this.updateAllTasks(this.state.tasks)
-      });
-    });
+    const newState = {
+      ...this.state,
+      tasks: [...this.localTasks]
+    };
+    this.updateState(newState);
+    this.init();
+  };
+
+  init() {
+    Emitter.on('ADD_NEW_TASK_INPUT', (newTask) => this.createNewTasks(newTask));
     Emitter.on('DELETE_TASK', (id) => {
       this.deleteTask(id);
     });
@@ -47,73 +52,91 @@ class App extends React.Component {
     Emitter.on('TOGGLE_EDIT_MODE', ({ id, inputRef }) => {
       this.toggleEditMode(id, inputRef);
     });
-    Emitter.on('UPDATE_VALUE', ({ id, value }) => {
+    Emitter.on('UPDATE_VALUE', ({ id, value, isBlur, input }) => {
+      if (isBlur) {
+        this.toggleEditMode()
+      }
       this.updateValue(id, value);
     });
     Emitter.on('CLEAR_COMPLETED', this.clearCompleted);
-    Emitter.on('CLICK_FOOTER_BTN', this.currentPage)
+    Emitter.on('CLICK_FOOTER_BTN', (path) => {
+      this.updatePath(path)
+    });
+  }
+
+  updateState(newState) {
+    const itemsLeft = this.localTasks.filter(
+      (t) => t.completed === false
+    ).length;
+    const activeTasks = this.localTasks.filter(t => t.completed === false);
+    const completedTasks = this.localTasks.filter(t => t.completed === true)
+    if (newState.path === active) {
+      this.setState({
+        ...newState,
+        tasks: activeTasks,
+        itemsLeft
+      });
+      return;
+    };
+    if (newState.path === completed) {
+      this.setState({
+        ...newState,
+        tasks: completedTasks,
+        itemsLeft
+      });
+      return;
+    };
+    this.setState({
+      ...newState,
+      tasks: this.localTasks,
+      itemsLeft
+    });
   };
 
-  getTasksFromLocal() {
-    return (JSON.parse(localStorage.getItem('tasks')) || []);
-  }
-
-  currentPage() {
-    const { pathname } = this.props.history.location
-    if (pathname.includes('all')) {
-      const newTasks = this.getTasksFromLocal()
-      this.setState({
-        tasks: [...newTasks],
-      })
+  updatePath(path) {
+    const newState = {
+      ...this.state,
+      path,
     }
-    if (pathname.includes('active')) {
-      const newTasks = this.getTasksFromLocal().filter((t) => t.completed === false);
-      this.setState({
-        tasks: [...newTasks],
-      })
-    }
-    if (pathname.includes('completed')) {
-      const newTasks = this.getTasksFromLocal().filter((t) => t.completed === true);
-      this.setState({
-        tasks: [...newTasks],
-      })
-    }
-  }
+    this.updateState(newState)
+  };
 
   updateLocal(newTasks) {
     localStorage.setItem('tasks', JSON.stringify(newTasks));
-    this.setState({ itemsLeft: this.getTasksFromLocal().filter(t => t.completed === false).length })
-  }
-
-  updateAllTasks(newTasks) {
-    this.updateLocal(newTasks);
-    this.currentPage();
+    this.localTasks = newTasks;
   }
 
   createNewTasks(newTask) {
-    const fromLocal = this.getTasksFromLocal();
-    this.setState({ tasks: [...fromLocal, newTask] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newState = {
+      ...this.state,
+      tasks: [...this.localTasks, newTask]
+    };
+    this.updateLocal(newState.tasks);
+    this.updateState(newState);
   }
 
   deleteTask(id) {
-    const newTasks = this.getTasksFromLocal().filter(t => t.id !== id);
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newTasks = this.localTasks.filter(t => t.id !== id);
+    const newState = {
+      ...this.state,
+      tasks: [...newTasks]
+    };
+    this.updateLocal(newTasks);
+    this.updateState(newState);
   }
 
   clearCompleted() {
-    const newTasks = this.getTasksFromLocal().filter((t) => t.completed === false);;
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newTasks = this.localTasks.filter((t) => t.completed === false);
+    const newState = {
+      ...this.state,
+      tasks: [...newTasks]
+    };
+    this.updateLocal(newTasks);
+    this.updateState(newState);
   }
 
   completeTask(id) {
-    const fromLocal = this.getTasksFromLocal();
-    const newTasks = fromLocal.map((t, i) => {
+    const newTasks = this.localTasks.map(t => {
       if (t.id === id) {
         return {
           ...t,
@@ -122,15 +145,17 @@ class App extends React.Component {
       };
       return t;
     });
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    });
+    const newState = {
+      ...this.state,
+      tasks: newTasks
+    };
+    this.updateLocal(newTasks);
+    this.updateState(newState);
   }
 
   checkAll() {
-    const currentTasks = this.getTasksFromLocal();
-    const notCompleted = currentTasks.find(t => t.completed === false);
-    const newTasks = currentTasks.map(t => {
+    const notCompleted = this.localTasks.find(t => t.completed === false);
+    const newTasks = this.localTasks.map(t => {
       if (notCompleted) {
         return {
           ...t,
@@ -142,53 +167,67 @@ class App extends React.Component {
         completed: false,
       };
     });
-    this.setState({ tasks: [...newTasks] }, () => {
-      this.updateAllTasks(this.state.tasks)
-    })
+    const newState = {
+      ...this.state,
+      tasks: [...newTasks]
+    }
+    this.updateLocal(newTasks);
+    this.updateState(newState);
   }
 
-  toggleEditMode(id, input) {
-    const newTasks = this.state.tasks.map(t => {
+  async toggleEditMode(id, input) {
+    const newTasks = this.localTasks.map(t => {
       if (t.id === id) {
         return {
           ...t,
           isEdit: !t.isEdit
-        }
-      }
-      return t
-    })
-    this.setState({ tasks: [...newTasks] }, () => {
-      input && input.current.focus()
+        };
+      };
+      return t;
     });
-  }
+
+    const newState = {
+      ...this.state,
+      tasks: [...newTasks]
+    };
+    this.updateLocal(newTasks);
+    await this.updateState(newState);
+    if (input) {
+      input.current.focus();
+    };
+  };
 
   updateValue(id, description) {
-    this.toggleEditMode(id)
-    const fromLocal = this.getTasksFromLocal();
-    const newTask = fromLocal.map(t => {
+    this.toggleEditMode(id);
+    const newTask = this.localTasks.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          description: description
-        }
-      }
-      return t
-    })
-    this.updateAllTasks(newTask)
-  }
+          description: description,
+        };
+      };
+      return t;
+    });
+    const newState = {
+      ...this.state,
+      tasks: [...newTask]
+    };
+    this.updateLocal(newTask);
+    this.updateState(newState);
+  };
 
   render() {
     return (
-      <section className="todoapp">
-        <Header />
-        <Todo
-          tasks={this.state.tasks}
-        />
-        <Footer
-          tasks={this.state.tasks}
-          itemsLeft={this.state.itemsLeft}
-        />
-      </section>
+      <Context.Provider value={{
+        ...this.state,
+        localTasks: this.localTasks,
+      }}>
+        <section className="todoapp">
+          <Header />
+          <Todo />
+          <Footer />
+        </section>
+      </Context.Provider>
     )
   };
 }
