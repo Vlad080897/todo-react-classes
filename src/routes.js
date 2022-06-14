@@ -1,3 +1,3 @@
-export const All = 'All';
-export const Active = 'Active';
-export const Completed = 'Completed';
+export const all = 'All';
+export const active = 'Active';
+export const completed = 'Completed';

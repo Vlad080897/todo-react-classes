@@ -1,5 +1,5 @@
 import React from "react";
-import { Active, All, Completed } from "../routes";
+import { active, all, completed } from "../routes";
 
 class Footer extends React.Component {
   constructor(props) {
@@ -40,8 +40,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${path === All ? 'activeButton' : ''}`}
-                onClick={() => { this.setPath(All) }}
+                className={`${path === all ? 'activeButton' : ''}`}
+                onClick={() => { this.setPath(all) }}
               >
                 All
               </button>
@@ -49,8 +49,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${path === Active ? 'activeButton' : ''}`}
-                onClick={() => { this.setPath(Active) }}
+                className={`${path === active ? 'activeButton' : ''}`}
+                onClick={() => { this.setPath(active) }}
               >
                 Active
               </button>
@@ -58,8 +58,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${path === Completed ? 'activeButton' : ''}`}
-                onClick={() => this.setPath(Completed)}
+                className={`${path === completed ? 'activeButton' : ''}`}
+                onClick={() => this.setPath(completed)}
               >
                 Completed
               </button>
