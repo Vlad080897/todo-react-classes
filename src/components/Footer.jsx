@@ -1,47 +1,47 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
+import { Active, All, Completed } from "../routes";
 
 class Footer extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      haveCompleted: null
+      haveCompleted: null,
     };
-    this.getTasksFromLocal = this.getTasksFromLocal.bind(this)
+    this.setPath = this.setPath.bind(this)
   }
   componentDidMount() {
-    const haveCompleted = this.getTasksFromLocal().filter(t => t.completed === true).length
-    this.setState({ haveCompleted: haveCompleted })
-  }
+    const haveCompleted = this.props.localTasks.filter(t => t.completed === true).length;
+    this.setState({ haveCompleted: haveCompleted });
+  };
 
   componentDidUpdate() {
-    const haveCompleted = this.getTasksFromLocal().filter(t => t.completed === true).length
+    const haveCompleted = this.props.localTasks.filter(t => t.completed === true).length
     if (haveCompleted !== this.state.haveCompleted) {
       this.setState({ haveCompleted: haveCompleted })
-    }
-  }
+    };
+  };
 
   getTasksFromLocal() {
     return (JSON.parse(localStorage.getItem('tasks')) || []);
   };
 
-  render() {
-    const fromLocal = this.getTasksFromLocal().length;
-    const { pathname } = this.props.history.location;
+  setPath(path) {
+    this.props.updatePath(path)
+  }
 
-    if (fromLocal) {
-      return (
-        <footer className="footer" id="footer_info_wrapper">
-          <span className="todo-count">{`${this.props.itemsLeft} items left`}</span>
+  render() {
+    const { itemsLeft, path } = this.props.mainState
+
+    return (
+      <>
+        {this.props.localTasks.length ? <footer className="footer" id="footer_info_wrapper" >
+          <span className="todo-count">{`${itemsLeft} items left`}</span>
           <ul className="filters">
             <li>
               <button
                 type="button"
-                className={`${pathname.includes('all') ? 'activeButton' : ''}`}
-                onClick={() => {
-                  this.props.history.push("/all");
-                  this.props.currentPage();
-                }}
+                className={`${path === All ? 'activeButton' : ''}`}
+                onClick={() => { this.setPath(All) }}
               >
                 All
               </button>
@@ -49,11 +49,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${pathname.includes('active') ? 'activeButton' : ''}`}
-                onClick={() => {
-                  this.props.history.push("/active");
-                  this.props.currentPage();
-                }}
+                className={`${path === Active ? 'activeButton' : ''}`}
+                onClick={() => { this.setPath(Active) }}
               >
                 Active
               </button>
@@ -61,11 +58,8 @@ class Footer extends React.Component {
             <li>
               <button
                 type="button"
-                className={`${pathname.includes('completed') ? 'activeButton' : ''}`}
-                onClick={() => {
-                  this.props.history.push("/completed");
-                  this.props.currentPage();
-                }}
+                className={`${path === Completed ? 'activeButton' : ''}`}
+                onClick={() => this.setPath(Completed)}
               >
                 Completed
               </button>
@@ -78,11 +72,10 @@ class Footer extends React.Component {
           >
             Clear completed
           </button>
-        </footer>
-      )
-    }
+        </footer > : null}
+      </>
+    )
   }
-
 }
 
-export default withRouter(Footer) 
+export default Footer
